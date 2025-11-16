@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Achievements - Investify{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-home"></i>
+                Home
+            </a></li>
+            <li><a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-chart-bar"></i>
+                Dashboard
+            </a></li>
+            <li><a href="{{ url_for('market') }}">
+                <i class="fas fa-shopping-cart"></i>
+                Market
+            </a></li>
+            <li><a href="{{ url_for('portfolio') }}">
+                <i class="fas fa-briefcase"></i>
+                Portfolio
+            </a></li>
+            <li><a href="{{ url_for('leaderboard') }}">
+                <i class="fas fa-trophy"></i>
+                Leaderboard
+            </a></li>
+            <li><a href="{{ url_for('achievements') }}" class="active">
+                <i class="fas fa-medal"></i>
+                Achievements
+            </a></li>
+            <li><a href="{{ url_for('tutorial') }}">
+                <i class="fas fa-book-open"></i>
+                Tutorial
+            </a></li>
+        </ul>
+        
+        <div class="quick-stats">
+            <h3>Quick Stats</h3>
+            <div class="stat">
+                <span>Global Rank</span>
+                <span>#{{ user.global_rank }}</span>
+            </div>
+            <div class="stat">
+                <span>Friends</span>
+                <span>{{ user.friends_count }}</span>
+            </div>
+            <div class="stat">
+                <span>Achievements</span>
+                <span>{{ user.achievements_count }}/{{ user.total_achievements }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="portfolio-value">
+                <span>Portfolio Value</span>
+                <div class="value">${{ "%.2f"|format(user.portfolio_value) }}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="user-avatar" style="background: {{ user.avatar_color }}; cursor: pointer;" onclick="window.location.href='{{ url_for('profile') }}'">
+                    {{ user.username[0].upper() }}
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.9rem;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+        
+        <!-- Achievements Header -->
+        <div style="margin-bottom: 30px;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(135deg, #ff6b9d, #9d4edd); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Achievements
+            </h1>
+            <p style="color: #cccccc; font-size: 1.1rem;">Track your trading milestones and earn rewards</p>
+        </div>
+        
+        <!-- Progress Section -->
+        <div class="dashboard-card" style="margin-bottom: 30px;">
+            <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-trophy"></i>
+                Your Progress
+            </h2>
+            
+            <div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+                <div style="text-align: center;">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 24px; color: #cccccc;">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: white;">Achievements Earned</div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #ff6b9d; margin-bottom: 5px;">0%</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: white;">Completion Rate</div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(0,255,136,0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 24px; color: #00ff88;">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: white;">Total XP Earned</div>
+                </div>
+            </div>
+            
+            <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
+                <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #00ff88, #00b8ff); transition: width 0.5s ease;"></div>
+            </div>
+        </div>
+        
+        <!-- Achievement Categories -->
+        <div style="margin-bottom: 30px;">
+            <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-medal"></i>
+                Achievement Categories
+            </h2>
+            
+            <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                <div class="dashboard-card" style="text-align: center; cursor: pointer;" onclick="filterAchievements('trading')">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #00ff88, #00cc6a); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 20px; color: white;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 style="color: white; margin-bottom: 10px;">Trading</h3>
+                    <p style="color: #cccccc; font-size: 0.9rem;">Achievements for making trades and building your portfolio</p>
+                </div>
+                
+                <div class="dashboard-card" style="text-align: center; cursor: pointer;" onclick="filterAchievements('profit')">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #00b8ff, #0099cc); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 20px; color: white;">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3 style="color: white; margin-bottom: 10px;">Profit</h3>
+                    <p style="color: #cccccc; font-size: 0.9rem;">Earn badges for making successful profitable trades</p>
+                </div>
+                
+                <div class="dashboard-card" style="text-align: center; cursor: pointer;" onclick="filterAchievements('streaks')">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #9d4edd, #7b2cbf); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 20px; color: white;">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 style="color: white; margin-bottom: 10px;">Streaks</h3>
+                    <p style="color: #cccccc; font-size: 0.9rem;">Consistency rewards for daily trading activity</p>
+                </div>
+                
+                <div class="dashboard-card" style="text-align: center; cursor: pointer;" onclick="filterAchievements('milestones')">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #ff6b9d, #ff4d8d); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 20px; color: white;">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3 style="color: white; margin-bottom: 10px;">Milestones</h3>
+                    <p style="color: #cccccc; font-size: 0.9rem;">Major achievements for reaching key portfolio values</p>
+                </div>
+                
+                <div class="dashboard-card" style="text-align: center; cursor: pointer;" onclick="filterAchievements('risk')">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #ff9500, #ff7a00); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 20px; color: white;">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <h3 style="color: white; margin-bottom: 10px;">Risk Taking</h3>
+                    <p style="color: #cccccc; font-size: 0.9rem;">Badges for bold trading moves and calculated risks</p>
+                </div>
+                
+                <div class="dashboard-card" style="text-align: center; cursor: pointer;" onclick="filterAchievements('elite')">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #ffd700, #ffed4e); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 20px; color: white;">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 style="color: white; margin-bottom: 10px;">Elite</h3>
+                    <p style="color: #cccccc; font-size: 0.9rem;">Exclusive achievements for top-tier performance</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- All Achievements -->
+        <div>
+            <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-trophy"></i>
+                All Achievements ({{ all_achievements|length }})
+            </h2>
+            
+            <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                {% for achievement in all_achievements %}
+                <div class="dashboard-card" {% if achievement.id in earned_achievement_ids %}style="border: 2px solid #00ff88; background: rgba(0, 255, 136, 0.1);"{% endif %}>
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: {% if achievement.id in earned_achievement_ids %}linear-gradient(135deg, #00ff88, #00cc6a){% else %}rgba(255,255,255,0.1){% endif %}; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">
+                            <i class="{{ achievement.icon }}"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="color: white; margin: 0 0 5px 0;">{{ achievement.name }}</h3>
+                            <p style="color: #cccccc; margin: 0; font-size: 0.9rem;">{{ achievement.description }}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #cccccc; font-size: 0.9rem;">Reward: {{ achievement.xp_reward }} XP</span>
+                            <span style="color: {% if achievement.id in earned_achievement_ids %}#00ff88{% else %}#9d4edd{% endif %}; font-size: 0.9rem; font-weight: bold;">
+                                {% if achievement.id in earned_achievement_ids %}✓ Earned{% else %}Available{% endif %}
+                            </span>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <span style="background: rgba(157, 78, 221, 0.3); color: #9d4edd; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; text-transform: capitalize;">
+                                {{ achievement.category }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Achievement Examples (Hidden by default) -->
+        <div id="achievementExamples" style="display: none; margin-top: 30px;">
+            <h2 style="color: #00b8ff; margin-bottom: 20px;">Available Achievements</h2>
+            <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div class="dashboard-card">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #00ff88, #00cc6a); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div>
+                            <h3 style="color: white; margin: 0;">First Trade</h3>
+                            <p style="color: #cccccc; margin: 0; font-size: 0.9rem;">Complete your first trade</p>
+                        </div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #cccccc; font-size: 0.9rem;">Reward: 50 XP</span>
+                            <span style="color: #00ff88; font-size: 0.9rem;">Available</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #00b8ff, #0099cc); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <div>
+                            <h3 style="color: white; margin: 0;">Doubled Money</h3>
+                            <p style="color: #cccccc; margin: 0; font-size: 0.9rem;">Double your starting portfolio</p>
+                        </div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #cccccc; font-size: 0.9rem;">Reward: 200 XP</span>
+                            <span style="color: #00ff88; font-size: 0.9rem;">Available</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #ff6b9d, #ff4d8d); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <div>
+                            <h3 style="color: white; margin: 0;">Risk Taker</h3>
+                            <p style="color: #cccccc; margin: 0; font-size: 0.9rem;">Make 10 high-risk trades</p>
+                        </div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #cccccc; font-size: 0.9rem;">Reward: 150 XP</span>
+                            <span style="color: #00ff88; font-size: 0.9rem;">Available</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterAchievements(category) {
+    // Show achievement examples when a category is clicked
+    const examples = document.getElementById('achievementExamples');
+    examples.style.display = 'block';
+    
+    // Scroll to examples
+    examples.scrollIntoView({ behavior: 'smooth' });
+    
+    // You can add more specific filtering logic here
+    console.log('Filtering achievements for category:', category);
+}
+</script>
+{% endblock %} 

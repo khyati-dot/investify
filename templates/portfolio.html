@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}Portfolio - Investify{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-home"></i>
+                Home
+            </a></li>
+            <li><a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-chart-bar"></i>
+                Dashboard
+            </a></li>
+            <li><a href="{{ url_for('market') }}">
+                <i class="fas fa-shopping-cart"></i>
+                Market
+            </a></li>
+            <li><a href="{{ url_for('portfolio') }}" class="active">
+                <i class="fas fa-briefcase"></i>
+                Portfolio
+            </a></li>
+            <li><a href="{{ url_for('leaderboard') }}">
+                <i class="fas fa-trophy"></i>
+                Leaderboard
+            </a></li>
+            <li><a href="{{ url_for('achievements') }}">
+                <i class="fas fa-medal"></i>
+                Achievements
+            </a></li>
+            <li><a href="{{ url_for('tutorial') }}">
+                <i class="fas fa-book-open"></i>
+                Tutorial
+            </a></li>
+        </ul>
+        
+        <div class="quick-stats">
+            <h3>Quick Stats</h3>
+            <div class="stat">
+                <span>Global Rank</span>
+                <span>#{{ user.global_rank }}</span>
+            </div>
+            <div class="stat">
+                <span>Friends</span>
+                <span>{{ user.friends_count }}</span>
+            </div>
+            <div class="stat">
+                <span>Achievements</span>
+                <span>{{ user.achievements_count }}/{{ user.total_achievements }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="portfolio-value">
+                <span>Portfolio Value</span>
+                <div class="value">${{ "%.2f"|format(user.portfolio_value) }}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="user-avatar" style="background: {{ user.avatar_color }}; cursor: pointer;" onclick="window.location.href='{{ url_for('profile') }}'">
+                    {{ user.username[0].upper() }}
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.9rem;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+        
+        <!-- Portfolio Header -->
+        <div style="margin-bottom: 30px;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(135deg, #00ff88, #00b8ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                My Portfolio
+            </h1>
+            <p style="color: #cccccc; font-size: 1.1rem;">Track your investments and performance</p>
+        </div>
+        
+        <!-- Portfolio Summary Cards -->
+        <div class="dashboard-grid" style="margin-bottom: 30px;">
+            <div class="dashboard-card" style="position: relative;">
+                <i class="fas fa-dollar-sign card-icon" style="color: #00b8ff;"></i>
+                <div class="card-title">Total Value</div>
+                <div class="card-value">${{ "%.2f"|format(user.portfolio_value) }}</div>
+                <div class="card-subtitle" id="totalChange">+$0.00 (+0.00%)</div>
+            </div>
+            
+            <div class="dashboard-card" style="position: relative;">
+                <i class="fas fa-coins card-icon" style="color: #00ff88;"></i>
+                <div class="card-title">Cash Balance</div>
+                <div class="card-value">${{ "%.2f"|format(user.cash_balance) }}</div>
+                <div class="card-subtitle">Available to trade</div>
+            </div>
+            
+            <div class="dashboard-card" style="position: relative;">
+                <i class="fas fa-chart-line card-icon" style="color: #9d4edd;"></i>
+                <div class="card-title">Total Return</div>
+                <div class="card-value" id="totalReturn">+0.00%</div>
+                <div class="card-subtitle">Since you started</div>
+            </div>
+            
+            <div class="dashboard-card" style="position: relative;">
+                <i class="fas fa-layer-group card-icon" style="color: #ff6b6b;"></i>
+                <div class="card-title">Holdings</div>
+                <div class="card-value" id="holdingsCount">0</div>
+                <div class="card-subtitle">Different stocks</div>
+            </div>
+        </div>
+        
+        <!-- Portfolio Chart -->
+        <div class="dashboard-card" style="margin-bottom: 30px;">
+            <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-chart-area"></i>
+                Portfolio Performance
+            </h2>
+            <div style="height: 300px; position: relative;">
+                <canvas id="portfolioChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Holdings Section -->
+        <div class="dashboard-card" style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="color: #00ff88; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-briefcase"></i>
+                    My Holdings
+                </h2>
+                <button onclick="toggleHoldings()" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.9rem;">
+                    <i class="fas fa-eye"></i>
+                    <span id="holdingsToggleText">View Holdings</span>
+                </button>
+            </div>
+            
+            <div id="holdingsList" style="display: none;">
+                <!-- Holdings will be populated here -->
+            </div>
+            
+            <div id="noHoldings" style="text-align: center; padding: 60px 20px; display: none;">
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 40px; color: #cccccc;">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <h3 style="color: white; margin-bottom: 10px;">No holdings yet</h3>
+                <p style="color: #cccccc; margin-bottom: 20px;">Start trading to build your portfolio!</p>
+                <a href="{{ url_for('market') }}" class="btn btn-primary">
+                    <i class="fas fa-play"></i>
+                    Start Trading
+                </a>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="dashboard-card">
+            <h2 style="color: #9d4edd; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-history"></i>
+                Recent Activity
+            </h2>
+            
+            <div id="recentActivity">
+                <!-- Activity will be populated here -->
+            </div>
+            
+            <div id="noActivity" style="text-align: center; padding: 40px 20px;">
+                <div style="color: #cccccc;">
+                    <i class="fas fa-clock" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                    <div>No recent activity</div>
+                    <div style="font-size: 0.9rem; margin-top: 5px; color: #888;">Your trading history will appear here</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Portfolio data will be loaded from backend
+let portfolioData = {
+    holdings: [],
+    history: []
+};
+
+// Initialize portfolio
+function initializePortfolio() {
+    loadPortfolioData();
+}
+
+// Load portfolio data from backend
+function loadPortfolioData() {
+    fetch('/get_portfolio_data')
+        .then(response => response.json())
+        .then(data => {
+            portfolioData.holdings = data.holdings;
+            portfolioData.history = data.transactions;
+            
+            updateHoldings();
+            updateRecentActivity();
+            createPortfolioChart();
+            updatePortfolioStats();
+        })
+        .catch(error => {
+            console.error('Error loading portfolio data:', error);
+        });
+}
+
+// Update holdings display
+function updateHoldings() {
+    const holdingsList = document.getElementById('holdingsList');
+    const noHoldings = document.getElementById('noHoldings');
+    
+    if (portfolioData.holdings.length === 0) {
+        holdingsList.style.display = 'none';
+        noHoldings.style.display = 'block';
+        return;
+    }
+    
+    holdingsList.style.display = 'block';
+    noHoldings.style.display = 'none';
+    
+    holdingsList.innerHTML = portfolioData.holdings.map(holding => {
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #00b8ff, #0099cc); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                        ${holding.symbol}
+                    </div>
+                    <div>
+                        <div style="font-size: 1.2rem; font-weight: bold; color: white;">${holding.symbol}</div>
+                        <div style="color: #cccccc; font-size: 0.9rem;">${holding.company_name}</div>
+                        <div style="color: #888; font-size: 0.8rem;">${holding.shares} shares @ $${holding.avg_price.toFixed(2)}</div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.3rem; font-weight: bold; color: white;">$${holding.total_value.toFixed(2)}</div>
+                    <div style="color: ${holding.gain_loss >= 0 ? '#00ff88' : '#ff6b6b'}; font-size: 0.9rem; font-weight: 500;">
+                        ${holding.gain_loss >= 0 ? '+' : ''}$${holding.gain_loss.toFixed(2)} (${holding.gain_loss_percent >= 0 ? '+' : ''}${holding.gain_loss_percent.toFixed(2)}%)
+                    </div>
+                    <div style="color: #888; font-size: 0.8rem;">$${holding.current_price.toFixed(2)}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Update recent activity
+function updateRecentActivity() {
+    const recentActivity = document.getElementById('recentActivity');
+    const noActivity = document.getElementById('noActivity');
+    
+    if (portfolioData.history.length === 0) {
+        recentActivity.style.display = 'none';
+        noActivity.style.display = 'block';
+        return;
+    }
+    
+    recentActivity.style.display = 'block';
+    noActivity.style.display = 'none';
+    
+    recentActivity.innerHTML = portfolioData.history.slice(0, 5).map(activity => {
+        const actionColor = activity.action === 'BUY' ? '#00ff88' : '#ff6b6b';
+        const actionIcon = activity.action === 'BUY' ? 'fa-arrow-up' : 'fa-arrow-down';
+        
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: ${actionColor}; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">
+                        <i class="fas ${actionIcon}"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: bold; color: white;">${activity.action} ${activity.symbol}</div>
+                        <div style="color: #cccccc; font-size: 0.9rem;">${activity.shares} shares @ $${activity.price.toFixed(2)}</div>
+                    </div>
+                </div>
+                <div style="text-align: right; color: #888; font-size: 0.9rem;">
+                    ${activity.date}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Create portfolio chart
+function createPortfolioChart() {
+    const ctx = document.getElementById('portfolioChart').getContext('2d');
+    
+    // Generate real portfolio data based on holdings
+    const labels = [];
+    const data = [];
+    const today = new Date();
+    
+    // Calculate current portfolio value
+    const totalHoldingsValue = portfolioData.holdings.reduce((sum, holding) => sum + holding.total_value, 0);
+    const cashBalance = {{ user.cash_balance }};
+    const currentPortfolioValue = totalHoldingsValue + cashBalance;
+    
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        
+        // If no holdings, show starting value, otherwise show realistic growth
+        if (portfolioData.holdings.length === 0) {
+            data.push(10000); // Starting value
+        } else {
+            // Simulate realistic portfolio growth based on current holdings
+            const daysAgo = 29 - i;
+            const growthFactor = 1 + (daysAgo * 0.001); // Small daily growth
+            const value = Math.max(10000, currentPortfolioValue * growthFactor);
+            data.push(value);
+        }
+    }
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Portfolio Value',
+                data: data,
+                borderColor: '#00b8ff',
+                backgroundColor: 'rgba(0, 184, 255, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#00b8ff',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#cccccc'
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#cccccc',
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    });
+}
+
+// Toggle holdings visibility
+function toggleHoldings() {
+    const holdingsList = document.getElementById('holdingsList');
+    const noHoldings = document.getElementById('noHoldings');
+    const toggleText = document.getElementById('holdingsToggleText');
+    const toggleBtn = document.querySelector('button[onclick="toggleHoldings()"]');
+    
+    if (holdingsList.style.display === 'none') {
+        // Show holdings
+        if (portfolioData.holdings.length > 0) {
+            holdingsList.style.display = 'block';
+            noHoldings.style.display = 'none';
+        } else {
+            noHoldings.style.display = 'block';
+        }
+        toggleText.textContent = 'Hide Holdings';
+        toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i><span id="holdingsToggleText">Hide Holdings</span>';
+    } else {
+        // Hide holdings
+        holdingsList.style.display = 'none';
+        noHoldings.style.display = 'none';
+        toggleText.textContent = 'View Holdings';
+        toggleBtn.innerHTML = '<i class="fas fa-eye"></i><span id="holdingsToggleText">View Holdings</span>';
+    }
+}
+
+// Update portfolio statistics
+function updatePortfolioStats() {
+    // Get stats from backend data
+    fetch('/get_portfolio_data')
+        .then(response => response.json())
+        .then(data => {
+            const stats = data.portfolio_stats;
+            
+            document.getElementById('totalChange').textContent = 
+                `${stats.total_gain_loss >= 0 ? '+' : ''}$${stats.total_gain_loss.toFixed(2)} (${stats.total_gain_loss_percent >= 0 ? '+' : ''}${stats.total_gain_loss_percent.toFixed(2)}%)`;
+            document.getElementById('totalChange').style.color = stats.total_gain_loss >= 0 ? '#00ff88' : '#ff6b6b';
+            
+            document.getElementById('totalReturn').textContent = `${stats.total_gain_loss_percent >= 0 ? '+' : ''}${stats.total_gain_loss_percent.toFixed(2)}%`;
+            document.getElementById('totalReturn').style.color = stats.total_gain_loss_percent >= 0 ? '#00ff88' : '#ff6b6b';
+            
+            document.getElementById('holdingsCount').textContent = stats.holdings_count;
+        })
+        .catch(error => {
+            console.error('Error updating portfolio stats:', error);
+        });
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializePortfolio();
+    
+    // Simulate real-time updates every 30 seconds
+    setInterval(() => {
+        // Update stock prices with small random changes
+        portfolioData.holdings.forEach(holding => {
+            const change = (Math.random() - 0.5) * 2; // -1 to +1
+            holding.currentPrice = Math.max(0, holding.currentPrice + change);
+        });
+        
+        updateHoldings();
+        updatePortfolioStats();
+    }, 30000);
+});
+</script>
+{% endblock %} 

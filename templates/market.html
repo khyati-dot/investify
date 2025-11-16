@@ -1,0 +1,680 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Market - Investify{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-home"></i>
+                Home
+            </a></li>
+            <li><a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-chart-bar"></i>
+                Dashboard
+            </a></li>
+            <li><a href="{{ url_for('market') }}" class="active">
+                <i class="fas fa-shopping-cart"></i>
+                Market
+            </a></li>
+            <li><a href="{{ url_for('portfolio') }}">
+                <i class="fas fa-briefcase"></i>
+                Portfolio
+            </a></li>
+            <li><a href="{{ url_for('leaderboard') }}">
+                <i class="fas fa-trophy"></i>
+                Leaderboard
+            </a></li>
+            <li><a href="{{ url_for('achievements') }}">
+                <i class="fas fa-medal"></i>
+                Achievements
+            </a></li>
+            <li><a href="{{ url_for('tutorial') }}">
+                <i class="fas fa-book-open"></i>
+                Tutorial
+            </a></li>
+        </ul>
+        
+        <div class="quick-stats">
+            <h3>Quick Stats</h3>
+            <div class="stat">
+                <span>Global Rank</span>
+                <span>#{{ user.global_rank }}</span>
+            </div>
+            <div class="stat">
+                <span>Friends</span>
+                <span>{{ user.friends_count }}</span>
+            </div>
+            <div class="stat">
+                <span>Achievements</span>
+                <span>{{ user.achievements_count }}/{{ user.total_achievements }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="portfolio-value">
+                <span>Portfolio Value</span>
+                <div class="value">${{ "%.2f"|format(user.portfolio_value) }}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="user-avatar" style="background: {{ user.avatar_color }}; cursor: pointer;" onclick="window.location.href='{{ url_for('profile') }}'">
+                    {{ user.username[0].upper() }}
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.9rem;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+        
+        <!-- Stock Market Header -->
+        <div style="margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(135deg, #00ff88, #00b8ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Stock Market
+            </h1>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button id="refreshBtn" onclick="refreshPrices()" title="Refresh live prices" style="padding:10px 14px; border-radius:10px; border:1px solid rgba(0,184,255,0.4); background: rgba(0,184,255,0.1); color:#9adfff; cursor:pointer;">
+                    <i class="fas fa-rotate"></i> Refresh Prices
+                </button>
+            </div>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="dashboard-grid" style="margin-bottom: 30px;">
+            <div class="dashboard-card" style="position: relative;">
+                <i class="fas fa-dollar-sign card-icon" style="color: #00b8ff;"></i>
+                <div class="card-title">Cash Balance</div>
+                <div class="card-value" id="marketCashBalance">${{ "%.2f"|format(user.cash_balance) }}</div>
+                <div class="card-subtitle">Money available to trade</div>
+            </div>
+            
+            <div class="dashboard-card" style="position: relative;">
+                <i class="fas fa-chart-line card-icon" style="color: #00ff88;"></i>
+                <div class="card-title">Total Portfolio Value</div>
+                <div class="card-value" id="marketPortfolioValue">${{ "%.2f"|format(user.portfolio_value) }}</div>
+                <div class="card-subtitle">Cash + Stock Value</div>
+            </div>
+            
+            <div class="dashboard-card" style="position: relative;">
+                <i class="fas fa-briefcase card-icon" style="color: #9d4edd;"></i>
+                <div class="card-title">Stock Holdings</div>
+                <div class="card-value" id="marketHoldingsCount">0</div>
+                <div class="card-subtitle">Different stocks owned</div>
+            </div>
+        </div>
+        
+        <!-- Search Section -->
+        <div class="dashboard-card" style="margin-bottom: 30px;">
+            <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-search"></i>
+                Search Stocks
+            </h2>
+            <div style="position: relative;">
+                <div style="position: relative;">
+                    <input type="text" id="stockSearch" placeholder="🔍 Search for stocks (e.g., AAPL, Tesla, Microsoft)..." 
+                           style="width: 100%; padding: 18px 20px; border: 2px solid rgba(0, 184, 255, 0.3); border-radius: 12px; background: rgba(255,255,255,0.08); color: white; font-size: 16px; transition: all 0.3s ease;"
+                           oninput="searchStocks(this.value)" onfocus="this.style.borderColor='#00b8ff'" onblur="this.style.borderColor='rgba(0, 184, 255, 0.3)'">
+                    <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #00b8ff; font-size: 18px;">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+                <div id="searchResults" style="position: absolute; top: 100%; left: 0; right: 0; background: linear-gradient(180deg, rgba(14,18,24,0.98), rgba(18,22,28,0.98)); border: 2px solid rgba(0, 184, 255, 0.8); border-radius: 14px; max-height: 420px; overflow-y: auto; z-index: 9000; display: none; margin-top: 10px; backdrop-filter: blur(10px); box-shadow: 0 18px 48px rgba(0,0,0,0.7); padding: 6px 0;"></div>
+            </div>
+        </div>
+        
+        <!-- My Holdings -->
+        <div class="dashboard-card" style="margin-bottom: 30px;">
+            <h2 style="color: #00ff88; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-briefcase"></i>
+                My Holdings
+            </h2>
+            
+            <div id="myHoldingsList">
+                <!-- Holdings will be populated here -->
+            </div>
+            
+            <div id="noHoldingsMessage" style="text-align: center; padding: 40px 20px; color: #cccccc;">
+                <i class="fas fa-briefcase" style="font-size: 48px; margin-bottom: 15px; display: block; color: #666;"></i>
+                <div style="font-size: 1.2rem; margin-bottom: 10px;">No stocks owned yet</div>
+                <div style="font-size: 0.9rem; color: #888;">Start trading to build your portfolio!</div>
+            </div>
+        </div>
+        
+        <!-- Popular Stocks -->
+        <div>
+            <h2 style="color: #9d4edd; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-chart-line"></i>
+                Popular Stocks
+            </h2>
+            
+            <div style="display: grid; gap: 15px;">
+                <!-- MSFT Stock -->
+                <div class="dashboard-card" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="openTradeModal('MSFT', 'Microsoft Corporation', 520.17)">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #00b8ff, #0099cc); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                            MSFT
+                        </div>
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: bold; color: white;">MSFT</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">Microsoft Corporation</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.3rem; font-weight: bold; color: white;">$520.17</div>
+                        <div style="color: #00ff88; font-size: 0.9rem;">+$2.31</div>
+                    </div>
+                </div>
+                
+                <!-- AAPL Stock -->
+                <div class="dashboard-card" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="openTradeModal('AAPL', 'Apple Inc.', 175.43)">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #00ff88, #00cc6a); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                            AAPL
+                        </div>
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: bold; color: white;">AAPL</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">Apple Inc.</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.3rem; font-weight: bold; color: white;">$175.43</div>
+                        <div style="color: #00ff88; font-size: 0.9rem;">+$1.25</div>
+                    </div>
+                </div>
+                
+                <!-- TSLA Stock -->
+                <div class="dashboard-card" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="openTradeModal('TSLA', 'Tesla Inc.', 245.67)">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #ff6b9d, #ff4d8d); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                            TSLA
+                        </div>
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: bold; color: white;">TSLA</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">Tesla Inc.</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.3rem; font-weight: bold; color: white;">$245.67</div>
+                        <div style="color: #ff6b6b; font-size: 0.9rem;">-$3.45</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trade Modal -->
+<div id="tradeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; backdrop-filter: blur(5px);">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; width: 90%; max-width: 500px; backdrop-filter: blur(10px);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 id="modalTitle" style="color: #00b8ff; font-size: 1.5rem;"></h2>
+            <button onclick="closeTradeModal()" style="background: none; border: none; color: #cccccc; font-size: 24px; cursor: pointer;">×</button>
+        </div>
+        
+        <div id="modalContent">
+            <!-- Stock info will be populated here -->
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <label style="display: block; margin-bottom: 8px; color: white;">Trade Type</label>
+            <select id="tradeType" onchange="updateTradeType()" style="width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; margin-bottom: 15px;">
+                <option value="buy">Buy Shares</option>
+                <option value="sell">Sell Shares</option>
+            </select>
+            
+            <div id="sellInfo" style="display: none; margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px;">
+                    <i class="fas fa-info-circle"></i> You own <span id="ownedShares">0</span> shares of this stock
+                </div>
+                <div style="color: #cccccc; font-size: 0.9rem;">
+                    Average price: $<span id="avgPrice">0.00</span>
+                </div>
+            </div>
+            
+            <label style="display: block; margin-bottom: 8px; color: white;">Number of Shares</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="number" id="shareCount" value="1" min="1" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white;">
+                <button onclick="setMaxShares()" style="padding: 12px 20px; background: #00b8ff; color: white; border: none; border-radius: 8px; cursor: pointer;">Max</button>
+            </div>
+            
+            <div id="tradeSummary" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <!-- Trade summary will be populated here -->
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeTradeModal()" style="flex: 1; padding: 15px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 8px; cursor: pointer;">Cancel</button>
+                <button onclick="executeTrade()" style="flex: 1; padding: 15px; background: linear-gradient(135deg, #00ff88, #00b8ff); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Execute Trade</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentStock = null;
+
+// Portfolio data (shared between market and portfolio pages)
+let portfolioData = {
+    holdings: [],
+    history: []
+};
+
+// Load portfolio data on page load
+function loadMarketData() {
+    fetch('/get_portfolio_data', { credentials: 'same-origin' })
+        .then(async response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '{{ url_for('login') }}';
+                    return Promise.reject('Unauthorized');
+                }
+                const ct = response.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    const j = await response.json();
+                    throw new Error(j.message || 'Request failed');
+                }
+                const text = await response.text();
+                throw new Error(text || 'Request failed');
+            }
+            return response.json();
+        })
+        .then(data => {
+            portfolioData.holdings = data.holdings;
+            portfolioData.history = data.transactions;
+            
+            updateMarketHoldings();
+            updateMarketStats();
+        })
+        .catch(error => {
+            console.error('Error loading market data:', error);
+        });
+}
+
+// Update market holdings display
+function updateMarketHoldings() {
+    const holdingsList = document.getElementById('myHoldingsList');
+    const noHoldingsMessage = document.getElementById('noHoldingsMessage');
+    
+    if (portfolioData.holdings.length === 0) {
+        holdingsList.style.display = 'none';
+        noHoldingsMessage.style.display = 'block';
+        return;
+    }
+    
+    holdingsList.style.display = 'block';
+    noHoldingsMessage.style.display = 'none';
+    
+    holdingsList.innerHTML = portfolioData.holdings.map(holding => {
+        const gainLoss = holding.gain_loss;
+        const gainLossPercent = holding.gain_loss_percent;
+        
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #00b8ff, #0099cc); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">
+                        ${holding.symbol}
+                    </div>
+                    <div>
+                        <div style="font-weight: bold; color: white;">${holding.symbol}</div>
+                        <div style="color: #cccccc; font-size: 0.9rem;">${holding.shares} shares</div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: bold; color: white;">$${holding.total_value.toFixed(2)}</div>
+                    <div style="color: ${gainLoss >= 0 ? '#00ff88' : '#ff6b6b'}; font-size: 0.9rem;">
+                        ${gainLoss >= 0 ? '+' : ''}$${gainLoss.toFixed(2)} (${gainLossPercent >= 0 ? '+' : ''}${gainLossPercent.toFixed(2)}%)
+                    </div>
+                </div>
+                <button onclick="openTradeModal('${holding.symbol}', '${holding.company_name}', ${holding.current_price})" 
+                        style="padding: 8px 16px; background: #00b8ff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                    Trade
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+// Update market statistics
+function updateMarketStats() {
+    const totalValue = portfolioData.holdings.reduce((sum, holding) => sum + holding.total_value, 0);
+    const cashBalance = {{ user.cash_balance }};
+    const portfolioValue = cashBalance + totalValue;
+    
+    document.getElementById('marketPortfolioValue').textContent = `$${portfolioValue.toFixed(2)}`;
+    document.getElementById('marketCashBalance').textContent = `$${cashBalance.toFixed(2)}`;
+    document.getElementById('marketHoldingsCount').textContent = portfolioData.holdings.length;
+}
+
+async function refreshPrices() {
+    const btn = document.getElementById('refreshBtn');
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+    btn.disabled = true;
+    try {
+        const res = await fetch('/refresh_prices', { method: 'POST', credentials: 'same-origin' });
+        const data = await res.json();
+        if (data.success) {
+            document.querySelector('.portfolio-value .value').textContent = `$${data.portfolio_value.toFixed(2)}`;
+            // simple toast
+            console.log(`Prices refreshed. Updated ${data.updated} symbols.`);
+            // Hard refresh data displayed
+            setTimeout(() => location.reload(), 500);
+        } else {
+            alert(data.message || 'Failed to refresh');
+        }
+    } catch (e) {
+        alert('Network error while refreshing');
+    } finally {
+        btn.innerHTML = original;
+        btn.disabled = false;
+    }
+}
+
+function openTradeModal(symbol, name, price) {
+    currentStock = { symbol, name, price };
+    document.getElementById('modalTitle').textContent = `$ Trade ${symbol}`;
+    
+    const content = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: white;">${symbol}</div>
+                <div style="color: #cccccc;">${name}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.8rem; font-weight: bold; color: white;">$${price}</div>
+                <div style="color: #00ff88;">+$2.31 (+0.44%)</div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('modalContent').innerHTML = content;
+    document.getElementById('tradeModal').style.display = 'block';
+    
+    // Reset to buy mode
+    document.getElementById('tradeType').value = 'buy';
+    updateTradeType();
+    updateTradeSummary();
+}
+
+function updateTradeType() {
+    const tradeType = document.getElementById('tradeType').value;
+    const sellInfo = document.getElementById('sellInfo');
+    
+    if (tradeType === 'sell') {
+        // Check if user owns this stock
+        const holding = portfolioData.holdings.find(h => h.symbol === currentStock.symbol);
+        if (holding) {
+            document.getElementById('ownedShares').textContent = holding.shares;
+            document.getElementById('avgPrice').textContent = holding.avg_price.toFixed(2);
+            sellInfo.style.display = 'block';
+            
+            // Set max shares to owned shares
+            document.getElementById('shareCount').value = Math.min(parseInt(document.getElementById('shareCount').value) || 1, holding.shares);
+        } else {
+            alert('You don\'t own any shares of this stock!');
+            document.getElementById('tradeType').value = 'buy';
+            sellInfo.style.display = 'none';
+        }
+    } else {
+        sellInfo.style.display = 'none';
+    }
+    
+    updateTradeSummary();
+}
+
+function closeTradeModal() {
+    document.getElementById('tradeModal').style.display = 'none';
+    currentStock = null;
+}
+
+function setMaxShares() {
+    const tradeType = document.getElementById('tradeType').value;
+    
+    if (tradeType === 'buy') {
+        const price = currentStock.price;
+        const cashBalance = {{ user.cash_balance }};
+        const maxShares = Math.floor(cashBalance / price);
+        document.getElementById('shareCount').value = maxShares;
+    } else if (tradeType === 'sell') {
+        const holding = portfolioData.holdings.find(h => h.symbol === currentStock.symbol);
+        if (holding) {
+            document.getElementById('shareCount').value = holding.shares;
+        }
+    }
+    
+    updateTradeSummary();
+}
+
+function updateTradeSummary() {
+    if (!currentStock) return;
+    
+    const shareCount = parseInt(document.getElementById('shareCount').value) || 0;
+    const price = currentStock.price;
+    const totalCost = shareCount * price;
+    const remainingBalance = {{ user.cash_balance }} - totalCost;
+    
+    const summary = `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Shares:</span>
+            <span>${shareCount}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Price per share:</span>
+            <span>$${price}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Total Cost:</span>
+            <span style="color: #ff6b6b; font-weight: bold;">$${totalCost.toFixed(2)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <span>Remaining balance:</span>
+            <span>$${remainingBalance.toFixed(2)}</span>
+        </div>
+    `;
+    
+    document.getElementById('tradeSummary').innerHTML = summary;
+}
+
+function executeTrade() {
+    const btn = event.target;
+    const tradeType = document.getElementById('tradeType').value;
+    const shareCount = parseInt(document.getElementById('shareCount').value) || 0;
+    
+    if (!currentStock || shareCount <= 0) {
+        alert('Please enter a valid number of shares');
+        return;
+    }
+    
+    btn.textContent = 'Processing...';
+    btn.disabled = true;
+    
+    // Execute real trade via API
+    fetch('/execute_trade', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            symbol: currentStock.symbol,
+            action: tradeType.toUpperCase(),
+            shares: shareCount,
+            price: currentStock.price,
+            company_name: currentStock.name
+        })
+    })
+    .then(async response => {
+        if (response.status === 401) {
+            window.location.href = '{{ url_for('login') }}';
+            return;
+        }
+        const ct = response.headers.get('content-type') || '';
+        let data = null;
+        let text = '';
+        try {
+            if (ct.includes('application/json')) {
+                data = await response.json();
+            } else {
+                text = await response.text();
+            }
+        } catch (e) {
+            console.error('Failed to parse response', e);
+        }
+
+        if (!response.ok) {
+            const message = (data && data.message) || text || 'Request failed';
+            throw new Error(message);
+        }
+
+        if (data && data.success) {
+            alert(data.message);
+            closeTradeModal();
+            
+            // Update displayed values
+            document.querySelector('.portfolio-value .value').textContent = `$${data.new_portfolio_value.toFixed(2)}`;
+            
+            // Refresh page to show updated portfolio
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            const message = (data && data.message) || 'Trade failed';
+            alert(message);
+        }
+    })
+    .catch(async error => {
+        console.error('Error:', error);
+        const message = (error && error.message) ? error.message : 'An error occurred while executing the trade';
+        // Auto-init DB once if missing tables are the cause, then retry
+        if (message.toLowerCase().includes('no such table')) {
+            try {
+                await fetch('/init_db', { method: 'POST', credentials: 'same-origin' });
+                return executeTrade();
+            } catch (e) {
+                // ignore and fall through to alert
+            }
+        }
+        alert(message);
+    })
+    .finally(() => {
+        btn.textContent = 'Execute Trade';
+        btn.disabled = false;
+    });
+}
+
+// Update summary when share count changes
+document.addEventListener('DOMContentLoaded', function() {
+    const shareInput = document.getElementById('shareCount');
+    if (shareInput) {
+        shareInput.addEventListener('input', updateTradeSummary);
+    }
+});
+
+// Live stock search using Yahoo Finance endpoints
+async function fetchQuotePrice(symbol) {
+    try {
+        const res = await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbol)}`);
+        const data = await res.json();
+        const q = data && data.quoteResponse && data.quoteResponse.result && data.quoteResponse.result[0];
+        return q && q.regularMarketPrice ? Number(q.regularMarketPrice) : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+let searchDebounceTimer = null;
+async function searchStocks(query) {
+    const searchResults = document.getElementById('searchResults');
+    if (!query || query.length < 1) {
+        searchResults.style.display = 'none';
+        return;
+    }
+    
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(async () => {
+        try {
+            searchResults.innerHTML = `<div style="padding: 14px 18px; color: #9adfff; font-size: 14px;">Searching…</div>`;
+            searchResults.style.display = 'block';
+
+            const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=8&newsCount=0`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const quotes = (data.quotes || []).filter(q => q.quoteType === 'EQUITY' && q.symbol && (q.shortname || q.longname));
+
+            if (quotes.length === 0) {
+        searchResults.innerHTML = `
+                    <div style="padding: 24px; color: #cccccc; text-align: center;">
+                        <i class="fas fa-search" style="font-size: 22px; margin-bottom: 8px; display: block; color: #666;"></i>
+                <div>No stocks found</div>
+                <div style="font-size: 0.9rem; margin-top: 5px; color: #888;">Try a different search term</div>
+            </div>`;
+                return;
+            }
+
+            // Batch fetch prices for all symbols
+            const symbols = quotes.map(q => q.symbol).join(',');
+            const quoteRes = await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`);
+            const quoteJson = await quoteRes.json();
+            const result = (quoteJson.quoteResponse && quoteJson.quoteResponse.result) || [];
+            const symbolToQuote = Object.fromEntries(result.map(r => [r.symbol, r]));
+
+            searchResults.innerHTML = quotes.map(q => {
+                const r = symbolToQuote[q.symbol] || {};
+                const price = r.regularMarketPrice != null ? Number(r.regularMarketPrice).toFixed(2) : '—';
+                const ch = r.regularMarketChange != null ? Number(r.regularMarketChange) : 0;
+                const chp = r.regularMarketChangePercent != null ? Number(r.regularMarketChangePercent) : 0;
+                const changeColor = ch >= 0 ? '#00ff88' : '#ff6b6b';
+                return `
+                    <div class="search-result-item" onclick="selectStock('${q.symbol}', '${(q.shortname || q.longname).replace(/'/g, "\\'")}')" 
+                         style="padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: white; transition: background 0.12s ease; font-size: 15px;"
+                         onmouseover="this.style.background='rgba(0, 184, 255, 0.14)'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #00b8ff, #0099cc); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 13px;">
+                                ${q.symbol}
+                    </div>
+                    <div>
+                                <div style="font-weight: bold; font-size: 1.05rem;">${q.symbol}</div>
+                                <div style="color: #cccccc; font-size: 0.95rem; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${q.shortname || q.longname}</div>
+                    </div>
+                </div>
+                        <div style="text-align: right; min-width: 140px;">
+                            <div style="font-weight: 600; font-size: 1.05rem;">$${price}</div>
+                            <div style="color: ${changeColor}; font-size: 0.85rem;">${ch >= 0 ? '+' : ''}${ch.toFixed(2)} (${chp >= 0 ? '+' : ''}${chp.toFixed(2)}%)</div>
+                    </div>
+                    </div>`;
+            }).join('');
+        } catch (e) {
+            searchResults.innerHTML = `<div style=\"padding: 20px; color: #ff6b6b;\">Search error. Check your internet connection.</div>`;
+    searchResults.style.display = 'block';
+        }
+    }, 250); // debounce
+}
+
+async function selectStock(symbol, name) {
+    document.getElementById('stockSearch').value = `${symbol} - ${name}`;
+    document.getElementById('searchResults').style.display = 'none';
+    const price = await fetchQuotePrice(symbol);
+    openTradeModal(symbol, name, price || 0);
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', function(event) {
+    const searchResults = document.getElementById('searchResults');
+    const stockSearch = document.getElementById('stockSearch');
+    
+    if (!searchResults.contains(event.target) && !stockSearch.contains(event.target)) {
+        searchResults.style.display = 'none';
+    }
+});
+
+// Load market data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadMarketData();
+});
+</script>
+{% endblock %} 

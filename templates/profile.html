@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Investify{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-home"></i>
+                Home
+            </a></li>
+            <li><a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-chart-bar"></i>
+                Dashboard
+            </a></li>
+            <li><a href="{{ url_for('market') }}">
+                <i class="fas fa-shopping-cart"></i>
+                Market
+            </a></li>
+            <li><a href="{{ url_for('portfolio') }}">
+                <i class="fas fa-briefcase"></i>
+                Portfolio
+            </a></li>
+            <li><a href="{{ url_for('leaderboard') }}">
+                <i class="fas fa-trophy"></i>
+                Leaderboard
+            </a></li>
+            <li><a href="{{ url_for('achievements') }}">
+                <i class="fas fa-medal"></i>
+                Achievements
+            </a></li>
+            <li><a href="{{ url_for('tutorial') }}">
+                <i class="fas fa-book-open"></i>
+                Tutorial
+            </a></li>
+        </ul>
+        
+        <div class="quick-stats">
+            <h3>Quick Stats</h3>
+            <div class="stat">
+                <span>Global Rank</span>
+                <span>#{{ user.global_rank }}</span>
+            </div>
+            <div class="stat">
+                <span>Friends</span>
+                <span>{{ user.friends_count }}</span>
+            </div>
+            <div class="stat">
+                <span>Achievements</span>
+                <span>{{ user.achievements_count }}/{{ user.total_achievements }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="portfolio-value">
+                <span>Portfolio Value</span>
+                <div class="value">${{ "%.2f"|format(user.portfolio_value) }}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="user-avatar" style="background: {{ user.avatar_color }};">
+                    {{ user.username[0].upper() }}
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.9rem;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+        
+        <!-- Profile Header -->
+        <div style="margin-bottom: 30px;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(135deg, #00ff88, #00b8ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                My Profile
+            </h1>
+            <p style="color: #cccccc; font-size: 1.1rem;">Manage your account and preferences</p>
+        </div>
+        
+        <!-- Profile Content -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            <!-- Profile Info -->
+            <div class="dashboard-card">
+                <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-user"></i>
+                    Profile Information
+                </h2>
+                
+                <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                    <div class="user-avatar-large" style="background: {{ user.avatar_color }};">
+                        {{ user.username[0].upper() }}
+                    </div>
+                    <div>
+                        <h3 style="color: white; font-size: 1.5rem; margin-bottom: 5px;">{{ user.username }}</h3>
+                        <p style="color: #cccccc;">Member since {{ user.created_at.strftime('%B %Y') }}</p>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: white;">Bio</label>
+                    <textarea id="bio" placeholder="Tell us about yourself..." style="width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; min-height: 100px; resize: vertical;">{{ user.bio }}</textarea>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: white;">Avatar Color</label>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <div class="color-option" data-color="#00b8ff" style="background: #00b8ff;"></div>
+                        <div class="color-option" data-color="#00ff88" style="background: #00ff88;"></div>
+                        <div class="color-option" data-color="#9d4edd" style="background: #9d4edd;"></div>
+                        <div class="color-option" data-color="#ff6b9d" style="background: #ff6b9d;"></div>
+                        <div class="color-option" data-color="#ffd700" style="background: #ffd700;"></div>
+                        <div class="color-option" data-color="#ff9500" style="background: #ff9500;"></div>
+                    </div>
+                </div>
+                
+                <button onclick="saveProfile()" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+            
+            <!-- Account Stats -->
+            <div class="dashboard-card">
+                <h2 style="color: #00ff88; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-chart-bar"></i>
+                    Account Statistics
+                </h2>
+                
+                <div style="display: grid; gap: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div>
+                            <div style="color: white; font-weight: bold;">Portfolio Value</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">Current total</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: #00ff88; font-size: 1.2rem; font-weight: bold;">${{ "%.2f"|format(user.portfolio_value) }}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div>
+                            <div style="color: white; font-weight: bold;">Cash Balance</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">Available to invest</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: #00b8ff; font-size: 1.2rem; font-weight: bold;">${{ "%.2f"|format(user.cash_balance) }}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div>
+                            <div style="color: white; font-weight: bold;">Global Rank</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">Among all traders</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: #9d4edd; font-size: 1.2rem; font-weight: bold;">#{{ user.global_rank }}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div>
+                            <div style="color: white; font-weight: bold;">Friends</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">Trading buddies</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: #ff6b9d; font-size: 1.2rem; font-weight: bold;">{{ user.friends_count }}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div>
+                            <div style="color: white; font-weight: bold;">Achievements</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">Earned badges</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: #ffd700; font-size: 1.2rem; font-weight: bold;">{{ user.achievements_count }}/{{ user.total_achievements }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Friends Section -->
+        <div class="dashboard-card" style="margin-top: 30px;">
+            <h2 style="color: #9d4edd; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-user-plus"></i>
+                Add Friends
+            </h2>
+            
+            <div style="display: flex; gap: 15px; align-items: end;">
+                <div style="flex: 1;">
+                    <label style="display: block; margin-bottom: 8px; color: white;">Friend's Username</label>
+                    <input type="text" id="friendUsername" placeholder="Enter username to add as friend..." style="width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white;">
+                </div>
+                <button onclick="addFriend()" class="btn btn-primary" style="padding: 12px 24px;">
+                    <i class="fas fa-user-plus"></i>
+                    Add Friend
+                </button>
+            </div>
+            
+            <div id="friendMessage" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.user-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    border: 3px solid rgba(255,255,255,0.2);
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    border-color: rgba(255,255,255,0.5);
+}
+
+.color-option.selected {
+    border-color: white;
+    transform: scale(1.1);
+}
+</style>
+
+<script>
+let selectedColor = '{{ user.avatar_color }}';
+
+// Initialize color selection
+document.addEventListener('DOMContentLoaded', function() {
+    const colorOptions = document.querySelectorAll('.color-option');
+    colorOptions.forEach(option => {
+        if (option.dataset.color === selectedColor) {
+            option.classList.add('selected');
+        }
+        
+        option.addEventListener('click', function() {
+            colorOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            selectedColor = this.dataset.color;
+        });
+    });
+});
+
+function saveProfile() {
+    const bio = document.getElementById('bio').value;
+    
+    fetch('/profile/edit', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            bio: bio,
+            avatar_color: selectedColor
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showMessage('Profile updated successfully!', 'success');
+            // Update avatar color in top bar
+            document.querySelector('.top-bar .user-avatar').style.background = selectedColor;
+        } else {
+            showMessage(data.message || 'Error updating profile', 'error');
+        }
+    })
+    .catch(error => {
+        showMessage('Error updating profile', 'error');
+    });
+}
+
+function addFriend() {
+    const username = document.getElementById('friendUsername').value.trim();
+    
+    if (!username) {
+        showFriendMessage('Please enter a username', 'error');
+        return;
+    }
+    
+    fetch('/add_friend', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            username: username
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showFriendMessage(data.message, 'success');
+            document.getElementById('friendUsername').value = '';
+            // Update friend count in sidebar
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showFriendMessage(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showFriendMessage('Error adding friend', 'error');
+    });
+}
+
+function showMessage(message, type) {
+    // You can implement a toast notification here
+    alert(message);
+}
+
+function showFriendMessage(message, type) {
+    const messageDiv = document.getElementById('friendMessage');
+    messageDiv.textContent = message;
+    messageDiv.style.color = type === 'success' ? '#00ff88' : '#ff6b6b';
+    messageDiv.style.fontWeight = 'bold';
+    
+    setTimeout(() => {
+        messageDiv.textContent = '';
+    }, 3000);
+}
+</script>
+{% endblock %} 

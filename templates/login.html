@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Investify{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h2>Welcome Back</h2>
+            <p>Sign in to continue your trading journey</p>
+        </div>
+        
+        <div id="message-container"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-container">
+                    <input type="password" id="password" name="password" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword()">
+                        <i class="fas fa-eye" id="passwordIcon"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <button type="submit" class="auth-btn">
+                <span id="btnText">Sign In</span>
+                <i class="fas fa-spinner fa-spin" id="btnSpinner" style="display: none;"></i>
+            </button>
+        </form>
+        
+        <!-- Forgot password feature coming soon -->
+        
+        <div class="auth-link">
+            Don't have an account? <a href="{{ url_for('register') }}">Sign up here</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    const passwordIcon = document.getElementById('passwordIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        passwordIcon.className = 'fas fa-eye-slash';
+    } else {
+        passwordInput.type = 'password';
+        passwordIcon.className = 'fas fa-eye';
+    }
+}
+
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const messageContainer = document.getElementById('message-container');
+    
+    // Show loading state
+    btnText.style.display = 'none';
+    btnSpinner.style.display = 'inline-block';
+    
+    const formData = {
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+    };
+    
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show success message
+            messageContainer.innerHTML = '<div class="success-message">Login successful! Redirecting...</div>';
+            setTimeout(() => {
+                window.location.href = data.redirect;
+            }, 1000);
+        } else {
+            // Show error message
+            messageContainer.innerHTML = `<div class="error-message">${data.message}</div>`;
+        }
+    } catch (error) {
+        messageContainer.innerHTML = '<div class="error-message">An error occurred. Please try again.</div>';
+    } finally {
+        // Reset button state
+        btnText.style.display = 'inline-block';
+        btnSpinner.style.display = 'none';
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block title %}Tutorial - Investify{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-home"></i>
+                Home
+            </a></li>
+            <li><a href="{{ url_for('dashboard') }}">
+                <i class="fas fa-chart-bar"></i>
+                Dashboard
+            </a></li>
+            <li><a href="{{ url_for('market') }}">
+                <i class="fas fa-shopping-cart"></i>
+                Market
+            </a></li>
+            <li><a href="{{ url_for('portfolio') }}">
+                <i class="fas fa-briefcase"></i>
+                Portfolio
+            </a></li>
+            <li><a href="{{ url_for('leaderboard') }}">
+                <i class="fas fa-trophy"></i>
+                Leaderboard
+            </a></li>
+            <li><a href="{{ url_for('achievements') }}">
+                <i class="fas fa-medal"></i>
+                Achievements
+            </a></li>
+            <li><a href="{{ url_for('tutorial') }}" class="active">
+                <i class="fas fa-book-open"></i>
+                Tutorial
+            </a></li>
+        </ul>
+        
+        <div class="quick-stats">
+            <h3>Quick Stats</h3>
+            <div class="stat">
+                <span>Global Rank</span>
+                <span>#{{ user.global_rank }}</span>
+            </div>
+            <div class="stat">
+                <span>Friends</span>
+                <span>{{ user.friends_count }}</span>
+            </div>
+            <div class="stat">
+                <span>Achievements</span>
+                <span>{{ user.achievements_count }}/{{ user.total_achievements }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="portfolio-value">
+                <span>Portfolio Value</span>
+                <div class="value">${{ "%.2f"|format(user.portfolio_value) }}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="user-avatar" style="background: {{ user.avatar_color }}; cursor: pointer;" onclick="window.location.href='{{ url_for('profile') }}'">
+                    {{ user.username[0].upper() }}
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.9rem;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+        
+        <!-- Tutorial Header -->
+        <div style="margin-bottom: 30px;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(135deg, #00ff88, #00b8ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Trading Tutorial
+            </h1>
+            <p style="color: #cccccc; font-size: 1.1rem;">Learn the basics of stock market investing</p>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="dashboard-card" style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: #00b8ff;">Tutorial Progress</h3>
+                <span id="progressPercentage" style="color: #cccccc;">0% Complete</span>
+            </div>
+            <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 15px;">
+                <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00b8ff, #00ff88); transition: width 0.5s ease;"></div>
+            </div>
+            <button id="stepCounter" class="btn btn-primary" style="float: right;">
+                Step 1 of 8
+            </button>
+            <div style="clear: both;"></div>
+        </div>
+        
+        <!-- Tutorial Content -->
+        <div style="display: grid; grid-template-columns: 300px 1fr; gap: 30px;">
+            <!-- Steps Navigation -->
+            <div class="dashboard-card">
+                <h3 style="color: #9d4edd; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-bullseye"></i>
+                    Steps
+                </h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="step-btn active" onclick="showStep(1)">
+                        <i class="fas fa-book"></i>
+                        Welcome
+                    </button>
+                    
+                    <button class="step-btn" onclick="showStep(2)">
+                        <i class="fas fa-chart-bar"></i>
+                        Understanding Stocks
+                    </button>
+                    
+                    <button class="step-btn" onclick="showStep(3)">
+                        <i class="fas fa-dollar-sign"></i>
+                        Buying Your First Stock
+                    </button>
+                    
+                    <button class="step-btn" onclick="showStep(4)">
+                        <i class="fas fa-chart-line"></i>
+                        Profit, Loss & Risk
+                    </button>
+                    
+                    <button class="step-btn" onclick="showStep(5)">
+                        <i class="fas fa-clock"></i>
+                        Building Your Portfolio
+                    </button>
+                    
+                    <button class="step-btn" onclick="showStep(6)">
+                        <i class="fas fa-users"></i>
+                        Competition & Friends
+                    </button>
+                    
+                    <button class="step-btn" onclick="showStep(7)">
+                        <i class="fas fa-trophy"></i>
+                        Achievements & Rewards
+                    </button>
+                    
+                    <button class="step-btn" onclick="showStep(8)">
+                        <i class="fas fa-shield-alt"></i>
+                        Safety & Education
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step Content -->
+            <div class="dashboard-card">
+                <div id="step1" class="step-content active">
+                    <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-book"></i>
+                        Welcome to Investify
+                    </h2>
+                    
+                    <p style="color: #cccccc; line-height: 1.6; margin-bottom: 20px;">
+                        Investify is a stock market simulation game where you can learn to trade with virtual money. You start with $10,000 to invest in real stocks using live market data.
+                    </p>
+                    
+                    <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <i class="fas fa-lightbulb" style="color: #00ff88;"></i>
+                            <span style="color: #00ff88; font-weight: bold;">Example:</span>
+                        </div>
+                        <p style="color: #cccccc; margin: 0;">Think of this as a safe sandbox to practice before real trading.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: #9d4edd; margin-bottom: 15px;">Key Tips:</h3>
+                        <ul style="color: #cccccc; line-height: 1.6; padding-left: 20px;">
+                            <li>This is completely virtual money - no real money at risk</li>
+                            <li>All stock prices are real and updated live</li>
+                            <li>You can compete with friends and climb leaderboards</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div id="step2" class="step-content">
+                    <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-chart-bar"></i>
+                        Understanding Stocks
+                    </h2>
+                    
+                    <p style="color: #cccccc; line-height: 1.6; margin-bottom: 20px;">
+                        Stocks represent ownership shares in a company. When you buy a stock, you own a tiny piece of that company. Stock prices go up and down based on company performance and market conditions.
+                    </p>
+                    
+                    <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <i class="fas fa-lightbulb" style="color: #00ff88;"></i>
+                            <span style="color: #00ff88; font-weight: bold;">Example:</span>
+                        </div>
+                        <p style="color: #cccccc; margin: 0;">If you buy Apple (AAPL) at $150 and sell at $160, you profit $10 per share.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: #9d4edd; margin-bottom: 15px;">Key Tips:</h3>
+                        <ul style="color: #cccccc; line-height: 1.6; padding-left: 20px;">
+                            <li>Stock prices change throughout trading hours (9:30 AM - 4:00 PM ET)</li>
+                            <li>Price movements reflect investor sentiment and company news</li>
+                            <li>You make money when you sell stocks for more than you paid</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div id="step3" class="step-content">
+                    <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-dollar-sign"></i>
+                        How to Trade Stocks
+                    </h2>
+                    
+                    <p style="color: #cccccc; line-height: 1.6; margin-bottom: 20px;">
+                        Trading is simple! Go to the Market page, search for any stock, and click on it to open the trade modal. You can buy or sell shares with just a few clicks.
+                    </p>
+                    
+                    <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <i class="fas fa-lightbulb" style="color: #00ff88;"></i>
+                            <span style="color: #00ff88; font-weight: bold;">How to Buy:</span>
+                        </div>
+                        <p style="color: #cccccc; margin: 0;">1. Go to Market → Search for a stock → Click on it → Select "Buy" → Choose shares → Click "Execute Trade"</p>
+                    </div>
+                    
+                    <div style="background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <i class="fas fa-lightbulb" style="color: #ff6b6b;"></i>
+                            <span style="color: #ff6b6b; font-weight: bold;">How to Sell:</span>
+                        </div>
+                        <p style="color: #cccccc; margin: 0;">1. Go to Market → Click "My Holdings" → Click "Trade" on any stock → Select "Sell" → Choose shares → Click "Execute Trade"</p>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: #9d4edd; margin-bottom: 15px;">Key Tips:</h3>
+                        <ul style="color: #cccccc; line-height: 1.6; padding-left: 20px;">
+                            <li>You can search by company name (Apple) or symbol (AAPL)</li>
+                            <li>Use the "Max" button to buy/sell all available shares</li>
+                            <li>Check your cash balance before buying</li>
+                            <li>View your holdings in the "My Holdings" section</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div id="step4" class="step-content">
+                    <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-chart-line"></i>
+                        Profit, Loss & Risk
+                    </h2>
+                    
+                    <p style="color: #cccccc; line-height: 1.6; margin-bottom: 20px;">
+                        Your profit or loss is the difference between what you paid and the current stock price. Higher potential returns usually come with higher risk of losses.
+                    </p>
+                    
+                    <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <i class="fas fa-question-circle" style="color: #00ff88;"></i>
+                            <span style="color: #00ff88; font-weight: bold;">Example:</span>
+                        </div>
+                        <p style="color: #cccccc; margin: 0;">Buy 10 shares at $100 each = $1,000 invested. If price goes to $110, you have $100 profit.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: #9d4edd; margin-bottom: 15px;">Key Tips:</h3>
+                        <ul style="color: #cccccc; line-height: 1.6; padding-left: 20px;">
+                            <li>Green numbers = profit, Red numbers = loss</li>
+                            <li>Don't panic over short-term price movements</li>
+                            <li>Diversify your portfolio to reduce risk</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div id="step5" class="step-content">
+                    <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-clock"></i>
+                        Building Your Portfolio
+                    </h2>
+                    
+                    <p style="color: #cccccc; line-height: 1.6; margin-bottom: 20px;">
+                        A portfolio is your collection of different stocks. Diversification means investing in different companies and industries to spread risk.
+                    </p>
+                    
+                    <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <i class="fas fa-lightbulb" style="color: #00ff88;"></i>
+                            <span style="color: #00ff88; font-weight: bold;">Example:</span>
+                        </div>
+                        <p style="color: #cccccc; margin: 0;">Instead of buying only tech stocks, also consider healthcare, retail, or energy companies.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: #9d4edd; margin-bottom: 15px;">Key Tips:</h3>
+                        <ul style="color: #cccccc; line-height: 1.6; padding-left: 20px;">
+                            <li>Don't put all money in one stock</li>
+                            <li>Mix different industries (tech, healthcare, finance)</li>
+                            <li>Monitor your portfolio's overall performance</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div id="step6" class="step-content">
+                    <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-users"></i>
+                        Competition & Friends
+                    </h2>
+                    
+                    <p style="color: #cccccc; line-height: 1.6; margin-bottom: 20px;">
+                        Compete with friends by sharing your friend code. Climb the leaderboards and see who can achieve the highest returns. Weekly competitions offer special rewards.
+                    </p>
+                    
+                    <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <i class="fas fa-lightbulb" style="color: #00ff88;"></i>
+                            <span style="color: #00ff88; font-weight: bold;">Example:</span>
+                        </div>
+                        <p style="color: #cccccc; margin: 0;">Your friend code is shown in your profile - share it to compete with friends</p>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: #9d4edd; margin-bottom: 15px;">Key Tips:</h3>
+                        <ul style="color: #cccccc; line-height: 1.6; padding-left: 20px;">
+                            <li>Share your friend code to add trading buddies</li>
+                            <li>Check leaderboards to see your ranking</li>
+                            <li>Participate in weekly competitions for extra rewards</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div id="step7" class="step-content">
+                    <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-trophy"></i>
+                        Achievements & Rewards
+                    </h2>
+                    
+                    <p style="color: #cccccc; line-height: 1.6; margin-bottom: 20px;">
+                        Earn achievements by reaching trading milestones, maintaining streaks, and achieving profit targets. Each achievement gives you experience points and bragging rights.
+                    </p>
+                    
+                    <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <i class="fas fa-lightbulb" style="color: #00ff88;"></i>
+                            <span style="color: #00ff88; font-weight: bold;">Example:</span>
+                        </div>
+                        <p style="color: #cccccc; margin: 0;">Double your starting money ($10k → $20k) to earn the 'Doubled Money' achievement</p>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: #9d4edd; margin-bottom: 15px;">Key Tips:</h3>
+                        <ul style="color: #cccccc; line-height: 1.6; padding-left: 20px;">
+                            <li>Complete your first trade to earn 'First Trade' badge</li>
+                            <li>Maintain daily trading streaks for bonus rewards</li>
+                            <li>Achievements unlock as you progress</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div id="step8" class="step-content">
+                    <h2 style="color: #00b8ff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-shield-alt"></i>
+                        Safety & Education
+                    </h2>
+                    
+                    <p style="color: #cccccc; line-height: 1.6; margin-bottom: 20px;">
+                        Remember, this is educational and uses virtual money only. Take advantage of the 'Did You Know?' tips and use this experience to learn about real investing.
+                    </p>
+                    
+                    <div style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <i class="fas fa-lightbulb" style="color: #00ff88;"></i>
+                            <span style="color: #00ff88; font-weight: bold;">Example:</span>
+                        </div>
+                        <p style="color: #cccccc; margin: 0;">Learn concepts like diversification, risk tolerance, and market volatility in a safe environment</p>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: #9d4edd; margin-bottom: 15px;">Key Tips:</h3>
+                        <ul style="color: #cccccc; line-height: 1.6; padding-left: 20px;">
+                            <li>All money in Investify is virtual and educational</li>
+                            <li>Read the educational tips that appear while trading</li>
+                            <li>Use this knowledge to understand real investing principles</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px;">
+                    <button class="btn btn-secondary" onclick="previousStep()">
+                        <i class="fas fa-arrow-left"></i>
+                        Previous
+                    </button>
+                    
+                    <div style="display: flex; gap: 5px;">
+                        <div class="step-dot active" onclick="showStep(1)"></div>
+                        <div class="step-dot" onclick="showStep(2)"></div>
+                        <div class="step-dot" onclick="showStep(3)"></div>
+                        <div class="step-dot" onclick="showStep(4)"></div>
+                        <div class="step-dot" onclick="showStep(5)"></div>
+                        <div class="step-dot" onclick="showStep(6)"></div>
+                        <div class="step-dot" onclick="showStep(7)"></div>
+                        <div class="step-dot" onclick="showStep(8)"></div>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="nextStep()">
+                        Next
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Call to Action -->
+        <div style="text-align: center; margin-top: 40px;">
+            <h2 style="color: #ff6b9d; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <i class="fas fa-heartbeat"></i>
+                Ready to Practice?
+            </h2>
+        </div>
+    </div>
+</div>
+
+<style>
+.step-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #cccccc;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: left;
+}
+
+.step-btn:hover {
+    background: rgba(0,184,255,0.1);
+    border-color: #00b8ff;
+    color: #00b8ff;
+}
+
+.step-btn.active {
+    background: rgba(0,184,255,0.1);
+    border-color: #00b8ff;
+    color: #00b8ff;
+}
+
+.step-content {
+    display: none;
+}
+
+.step-content.active {
+    display: block;
+}
+
+.step-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.step-dot.active {
+    background: #00b8ff;
+}
+
+.step-dot:hover {
+    background: #00ff88;
+}
+</style>
+
+<script>
+let currentStep = 1;
+const totalSteps = 8;
+
+function showStep(step) {
+    // Hide all step contents
+    document.querySelectorAll('.step-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Remove active class from all step buttons and dots
+    document.querySelectorAll('.step-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelectorAll('.step-dot').forEach(dot => {
+        dot.classList.remove('active');
+    });
+    
+    // Show selected step
+    document.getElementById(`step${step}`).classList.add('active');
+    document.querySelectorAll('.step-btn')[step - 1].classList.add('active');
+    document.querySelectorAll('.step-dot')[step - 1].classList.add('active');
+    
+    currentStep = step;
+    
+    // Update progress bar and percentage
+    const progress = (step / totalSteps) * 100;
+    const progressBar = document.getElementById('progressBar');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const stepCounter = document.getElementById('stepCounter');
+    
+    if (progressBar) {
+        progressBar.style.width = progress + '%';
+    }
+    if (progressPercentage) {
+        progressPercentage.textContent = `${Math.round(progress)}% Complete`;
+    }
+    if (stepCounter) {
+        stepCounter.textContent = `Step ${step} of ${totalSteps}`;
+    }
+    
+    // Save progress to backend
+    fetch('/update_tutorial_progress', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ current_step: step })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update progress percentage display
+            const progressPercentage = document.querySelector('.progress-percentage');
+            if (progressPercentage) {
+                progressPercentage.textContent = `${data.progress_percentage.toFixed(0)}%`;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error updating tutorial progress:', error);
+    });
+}
+
+function nextStep() {
+    if (currentStep < totalSteps) {
+        showStep(currentStep + 1);
+    }
+}
+
+function previousStep() {
+    if (currentStep > 1) {
+        showStep(currentStep - 1);
+    }
+}
+
+// Load tutorial progress from backend
+function loadTutorialProgress() {
+    fetch('/get_tutorial_progress')
+        .then(response => response.json())
+        .then(data => {
+            if (data.current_step > 1) {
+                showStep(data.current_step);
+            } else {
+                showStep(1);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading tutorial progress:', error);
+            showStep(1);
+        });
+}
+
+// Initialize first step
+document.addEventListener('DOMContentLoaded', function() {
+    loadTutorialProgress();
+});
+</script>
+{% endblock %} 
