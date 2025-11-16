@@ -19,12 +19,18 @@ if database_url:
     # Render and other services use postgres://, but SQLAlchemy needs postgresql://
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    # For Python 3.13+, use psycopg instead of psycopg2
+    # For Python 3.13+, try to use psycopg instead of psycopg2
     if database_url.startswith('postgresql://') and not database_url.startswith('postgresql+psycopg://'):
         try:
             import sys
             if sys.version_info >= (3, 13):
-                database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+                # Try to import psycopg, if available use it
+                try:
+                    import psycopg
+                    database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+                except ImportError:
+                    # Fall back to psycopg2 if psycopg not available
+                    pass
         except:
             pass
     # Validate the URL is not empty after processing
