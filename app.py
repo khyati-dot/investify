@@ -14,12 +14,27 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-this-in-production')
 
 # Database configuration - supports both SQLite (local) and PostgreSQL (production)
-database_url = os.environ.get('DATABASE_URL')
+database_url = os.environ.get('DATABASE_URL', '').strip()
 if database_url:
     # Render and other services use postgres://, but SQLAlchemy needs postgresql://
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    # For Python 3.13+, use psycopg instead of psycopg2
+    if database_url.startswith('postgresql://') and not database_url.startswith('postgresql+psycopg://'):
+        try:
+            import sys
+            if sys.version_info >= (3, 13):
+                database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+        except:
+            pass
+    # Validate the URL is not empty after processing
+    if database_url:
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    else:
+        # Fallback to SQLite if DATABASE_URL is invalid
+        os.makedirs(app.instance_path, exist_ok=True)
+        default_sqlite_path = os.path.join(app.instance_path, 'investify.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{default_sqlite_path}'
 else:
     # Default to SQLite for local development
     os.makedirs(app.instance_path, exist_ok=True)
