@@ -524,6 +524,107 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/seed_database')
+def seed_database_route():
+    """One-time route to seed the database with 29 users and friendships"""
+    # Simple protection - you can remove this or add better auth
+    secret_key = request.args.get('key', '')
+    if secret_key != os.environ.get('SEED_KEY', 'seed-investify-2024'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from werkzeug.security import generate_password_hash
+        import random
+        
+        # List of realistic usernames
+        usernames = [
+            "alex_trader", "sarah_invests", "mike_wallstreet", "emma_stocks", "james_market",
+            "lisa_portfolio", "david_trades", "olivia_finance", "chris_investor", "sophia_wealth",
+            "ryan_trading", "mia_stocks", "noah_market", "ava_invests", "ethan_portfolio",
+            "isabella_trader", "lucas_finance", "amelia_stocks", "henry_market", "charlotte_invests",
+            "benjamin_trades", "harper_portfolio", "mason_finance", "ella_stocks", "jackson_market",
+            "luna_invests", "aiden_trader", "zoe_portfolio", "carter_finance"
+        ]
+        
+        users_created = 0
+        friendships_created = 0
+        
+        # Create users
+        for username in usernames:
+            existing = User.query.filter_by(username=username).first()
+            if existing:
+                continue
+            
+            user = User(
+                username=username,
+                email=f"{username}@example.com",
+                password_hash=generate_password_hash("password123"),
+                portfolio_value=random.uniform(8000, 15000),
+                cash_balance=random.uniform(5000, 12000),
+                friends_count=0,
+                achievements_count=random.randint(0, 10),
+                total_achievements=25,
+                created_at=datetime.now() - timedelta(days=random.randint(1, 90)),
+                login_count=random.randint(5, 50),
+                trades_made=random.randint(0, 30),
+                total_trades_value=random.uniform(1000, 5000),
+                achievements_unlocked=random.randint(0, 10),
+                tutorial_completed=random.choice([True, False]),
+                profile_views=random.randint(0, 100),
+                is_active=True
+            )
+            db.session.add(user)
+            users_created += 1
+        
+        db.session.commit()
+        
+        # Get all users
+        all_users = User.query.all()
+        
+        # Create friendships
+        for user in all_users:
+            num_friends = random.randint(2, 5)
+            potential_friends = [u for u in all_users if u.id != user.id]
+            friends = random.sample(potential_friends, min(num_friends, len(potential_friends)))
+            
+            for friend in friends:
+                existing = Friendship.query.filter(
+                    ((Friendship.user_id == user.id) & (Friendship.friend_id == friend.id)) |
+                    ((Friendship.user_id == friend.id) & (Friendship.friend_id == user.id))
+                ).first()
+                
+                if not existing:
+                    friendship = Friendship(
+                        user_id=user.id,
+                        friend_id=friend.id,
+                        created_at=datetime.now() - timedelta(days=random.randint(1, 30))
+                    )
+                    db.session.add(friendship)
+                    friendships_created += 1
+        
+        db.session.commit()
+        
+        # Update friend counts and rankings
+        for user in all_users:
+            user.friends_count = Friendship.query.filter_by(user_id=user.id).count()
+        
+        users_sorted = User.query.order_by(User.portfolio_value.desc()).all()
+        for i, user in enumerate(users_sorted, 1):
+            user.global_rank = i
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Database seeded successfully!',
+            'users_created': users_created,
+            'friendships_created': friendships_created,
+            'total_users': User.query.count(),
+            'total_friendships': Friendship.query.count()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5002))
     app.run(debug=False, host='0.0.0.0', port=port)
